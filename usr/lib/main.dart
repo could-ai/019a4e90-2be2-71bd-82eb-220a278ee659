@@ -26,9 +26,10 @@ class Post {
   final String userAvatarUrl;
   final String content;
   final String? imageUrl;
-  final int likes;
-  final int comments;
-  final int shares;
+  int likes;
+  int comments;
+  int shares;
+  bool isLiked;
 
   Post({
     required this.username,
@@ -38,6 +39,7 @@ class Post {
     required this.likes,
     required this.comments,
     required this.shares,
+    this.isLiked = false,
   });
 }
 
@@ -87,6 +89,42 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
     ),
   ];
 
+  void _handleLike(int index) {
+    setState(() {
+      if (posts[index].isLiked) {
+        posts[index].likes--;
+        posts[index].isLiked = false;
+      } else {
+        posts[index].likes++;
+        posts[index].isLiked = true;
+      }
+    });
+  }
+
+  void _handleComment(int index) {
+    setState(() {
+      posts[index].comments++;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Comments functionality would be implemented here."),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _handleShare(int index) {
+    setState(() {
+      posts[index].shares++;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Share functionality would be implemented here."),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,7 +137,12 @@ class _SocialFeedScreenState extends State<SocialFeedScreen> {
         itemCount: posts.length,
         itemBuilder: (context, index) {
           final post = posts[index];
-          return PostCard(post: post);
+          return PostCard(
+            post: post,
+            onLike: () => _handleLike(index),
+            onComment: () => _handleComment(index),
+            onShare: () => _handleShare(index),
+          );
         },
       ),
     );
@@ -110,9 +153,15 @@ class PostCard extends StatelessWidget {
   const PostCard({
     super.key,
     required this.post,
+    required this.onLike,
+    required this.onComment,
+    required this.onShare,
   });
 
   final Post post;
+  final VoidCallback onLike;
+  final VoidCallback onComment;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -162,9 +211,25 @@ class PostCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildActionButton(icon: Icons.thumb_up_alt_outlined, label: '${post.likes} Likes'),
-                _buildActionButton(icon: Icons.comment_outlined, label: '${post.comments} Comments'),
-                _buildActionButton(icon: Icons.share_outlined, label: '${post.shares} Shares'),
+                _buildActionButton(
+                  context: context,
+                  icon: post.isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                  label: '${post.likes} Likes',
+                  onTap: onLike,
+                  color: post.isLiked ? Theme.of(context).colorScheme.primary : Colors.grey[600],
+                ),
+                _buildActionButton(
+                  context: context,
+                  icon: Icons.comment_outlined,
+                  label: '${post.comments} Comments',
+                  onTap: onComment,
+                ),
+                _buildActionButton(
+                  context: context,
+                  icon: Icons.share_outlined,
+                  label: '${post.shares} Shares',
+                  onTap: onShare,
+                ),
               ],
             ),
           ),
@@ -173,13 +238,26 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton({required IconData icon, required String label}) {
-    return Row(
-      children: [
-        Icon(icon, size: 20.0, color: Colors.grey[600]),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(color: Colors.grey[800])),
-      ],
+  Widget _buildActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8.0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+        child: Row(
+          children: [
+            Icon(icon, size: 20.0, color: color ?? Colors.grey[600]),
+            const SizedBox(width: 4),
+            Text(label, style: TextStyle(color: Colors.grey[800])),
+          ],
+        ),
+      ),
     );
   }
 }
